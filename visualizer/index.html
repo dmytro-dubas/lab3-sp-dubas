@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Візуалізація AST дерева — Лабораторна №3</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="d3.v7.min.js"></script>
+  <script>
+    if (typeof d3 === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/d3@7"><\/script>');
+    }
+  </script>
+  <script src="ast_data.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="title-box">
+      <h2>Синтаксичний аналізатор мови C: Візуалізація AST</h2>
+      <span class="subtitle">Студент: Дубас Дмитро (ФКНК) | Лабораторна робота №3</span>
+    </div>
+    <div class="toolbar">
+      <button onclick="fitToScreen()">Центрувати дерево</button>
+      <button onclick="expandAll()">Розгорнути все</button>
+      <button onclick="collapseAll()">Згорнути до кореня</button>
+      <button onclick="exportJSON()">Зберегти JSON</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Ліва колонка: Сирцевий код C -->
+    <div class="col" id="col-source">
+      <div class="col-header">Вихідний код мови C</div>
+      <pre id="source-code-view">// Завантаження коду...</pre>
+    </div>
+
+    <!-- Центральна колонка: Дерево AST на D3.js -->
+    <div class="col" id="col-tree">
+      <div class="col-header">Графічне дерево розбору (D3.js)</div>
+      <div id="tree-container">
+        <!-- SVG монтується через D3 -->
+      </div>
+    </div>
+
+    <!-- Права колонка: Таби компілятора -->
+    <div class="col" id="col-output">
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchTab('tac')">3AC (IR)</button>
+        <button class="tab-btn" onclick="switchTab('asm')">x86-64</button>
+        <button class="tab-btn" onclick="switchTab('py')">Python / JS</button>
+        <button class="tab-btn" onclick="switchTab('sem')">Семантика</button>
+      </div>
+      <div class="tab-body">
+        <pre id="tab-content-tac" class="tab-panel active"></pre>
+        <pre id="tab-content-asm" class="tab-panel"></pre>
+        <pre id="tab-content-py" class="tab-panel"></pre>
+        <pre id="tab-content-sem" class="tab-panel"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="visualizer.js"></script>
+  <script>
+    let currentASTData = null;
+
+    function exportJSON() {
+      if (!currentASTData) return;
+      const blob = new Blob([JSON.stringify(currentASTData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "ast_tree.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      event.target.classList.add('active');
+      const target = document.getElementById('tab-content-' + name);
+      if (target) target.classList.add('active');
+    }
+
+    function loadCompilerData(data) {
+      if (!data) return;
+      currentASTData = data.ast;
+      document.getElementById('source-code-view').textContent = data.source || "// Немає коду";
+      document.getElementById('tab-content-tac').textContent = data.tac || "// Немає 3AC";
+      document.getElementById('tab-content-asm').textContent = data.asm || "// Немає ASM";
+      document.getElementById('tab-content-py').textContent = (data.python || "") + "\n\n// --- JavaScript ---\n" + (data.javascript || "");
+      document.getElementById('tab-content-sem').textContent = data.semantics || "0 помилок";
+
+      if (data.ast) {
+        initVisualizer(data.ast);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (typeof window.AST_DATA !== 'undefined' && window.AST_DATA) {
+        loadCompilerData(window.AST_DATA);
+      } else {
+        fetch('ast_data.json')
+          .then(r => r.json())
+          .then(data => loadCompilerData(data))
+          .catch(e => {
+            console.log('Використано резервні дані');
+          });
+      }
+    });
+  </script>
+</body>
+</html>

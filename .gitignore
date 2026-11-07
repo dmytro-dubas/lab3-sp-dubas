@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.o
+*.exe
+c_compiler
+c_src/parser.tab.c
+c_src/parser.tab.h
+c_src/lex.yy.c
+*.zip
+ПОСИЛАННЯ_ДЛЯ_ВІДПРАВКИ_В_КЛАС.txt
